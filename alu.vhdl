@@ -19,8 +19,8 @@ begin
   begin
     if (rising_edge(clk)) then
       case op is
-        when "00" => a_out <= in1 & in2;
-        when others => assert (false);
+        when "00" => a_out <= in1 and in2;
+        when others => a_out <= in1;
       end case;
       done <= '1';
     end if;

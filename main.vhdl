@@ -21,6 +21,7 @@ architecture behavioral of main is
   signal alu_in1 : std_logic_vector (0 to 7);
   signal alu_in2 : std_logic_vector (0 to 7);
   signal alu_out : std_logic_vector (0 to 7);
+  signal reg_enabled : std_logic := '0';
 begin
   clock_inst: entity work.clock 
     port map(
@@ -39,7 +40,8 @@ begin
       clk => clk,
       data => reg_data,
       write => reg_write,
-      r_select => reg_select
+      r_select => reg_select,
+      enabled => reg_enabled
     );
 
     load_instructions: process (clk)

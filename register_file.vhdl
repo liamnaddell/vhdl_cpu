@@ -7,7 +7,8 @@ entity register_file is
     clk: in std_logic;
     r_select: in std_logic_vector(0 to 1);
     data: inout std_logic_vector(0 to 7);
-    write : in std_logic
+    write : in std_logic;
+    enabled : in std_logic
   );
 end;
 
@@ -19,7 +20,7 @@ architecture RTL of register_file is
 begin
   process(clk)
   begin
-    if (rising_edge(clk)) then
+    if rising_edge(clk) and (enabled = '1') then
       data <=
         reg_zero when to_integer(unsigned(r_select)) = 0 else
         registers(to_integer(unsigned(r_select)));

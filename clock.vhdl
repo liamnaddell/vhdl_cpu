@@ -10,11 +10,9 @@ architecture behave of clock is
 begin
   do_lock: process
   begin
-    report "CLK HI";
     clk <= '0';
     wait for 0.5 ns;
     clk <= '1';
     wait for 0.5 ns;
   end process;
-
 end;
