@@ -4,11 +4,15 @@ use ieee.std_logic_1164.all;
 entity main is
 end;
 
-architecture behavioral of main is
-  signal clk: std_logic := '0';
-  -- used for when loading is done
-  signal done_load : std_logic;
 
+architecture behavioral of main is
+    function to_bstring(sl : std_logic) return string is
+      variable sl_str_v : string(1 to 3);  -- std_logic image with quotes around
+    begin
+      sl_str_v := std_logic'image(sl);
+      return "" & sl_str_v(2);  -- "" & character to get string
+    end function;
+  signal clk: std_logic := '0';
   signal reg_data : std_logic_vector(0 to 7);
   signal reg_select : std_logic_vector(0 to 1);
   signal reg_write : std_logic;
@@ -22,6 +26,11 @@ architecture behavioral of main is
   signal alu_in2 : std_logic_vector (0 to 7);
   signal alu_out : std_logic_vector (0 to 7);
   signal reg_enabled : std_logic := '0';
+  type cpu_state is (fetch,store);
+  signal current_state : cpu_state := fetch;
+  signal next_state : cpu_state := fetch;
+  signal done_fetch : std_ulogic := '0';
+  signal done_store : std_ulogic := '0';
 begin
   clock_inst: entity work.clock 
     port map(
@@ -44,35 +53,34 @@ begin
       enabled => reg_enabled
     );
 
-    load_instructions: process (clk)
+    load_instructions: process (clk,current_state)
       constant zero: std_logic_vector (0 to 7) := "00000000";
       --OORDRSII
     begin
       if (rising_edge(clk)) then
-        report "HI";
-        instruction <= "00000001";
-        --decode the instruction
-        op <= instruction(0 to 1);
-        rd <= instruction(2 to 3);
-        rs <= instruction(4 to 5);
-        imm <= instruction(6 to 7);
-        --configure the register file to select the register from the instruction
-        reg_select <= rs;
-        --configure the register file to write the alu output to a register
-        alu_op <= op;
-        alu_in1 <= "01001010";
-        alu_in2 <= "11111111";
-        done_load <= '1';
-      end if;
-    end process;
-    store_alu_output: process (done_load)
-    begin 
-      if (done_load) then
-        report "HI";
-        reg_data <= alu_out;
-        reg_select <= rd;
-        reg_write <= '1';
-        done_load <= '0';
+        if current_state = fetch then
+          done_fetch <= '0';
+          report "Fetching";
+          instruction <= "00000001";
+          --decode the instruction
+          op <= instruction(0 to 1);
+          rd <= instruction(2 to 3);
+          rs <= instruction(4 to 5);
+          imm <= instruction(6 to 7);
+          --configure the register file to select the register from the instruction
+          reg_select <= rs;
+          --configure the register file to write the alu output to a register
+          alu_op <= op;
+          alu_in1 <= "01001010";
+          alu_in2 <= "11111111";
+          current_state <= store;
+        elsif current_state = store then
+          report "Storing";
+          reg_data <= alu_out;
+          reg_select <= rd;
+          reg_write <= '1';
+          current_state <= fetch;
+        end if;
       end if;
     end process;
 end architecture behavioral;
