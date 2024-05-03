@@ -1,5 +1,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
+use std.textio.all;
 
 entity main is
 end;
@@ -21,16 +22,18 @@ architecture behavioral of main is
   signal rs: std_logic_vector (0 to 1);
   signal imm: std_logic_vector (0 to 1);
   signal op: std_logic_vector (0 to 1);
+
+  signal mem_write: std_logic := '0';
+  signal mem_addr: std_logic_vector (0 to 7);
+  signal mem_data: std_logic_vector (0 to 7);
+
   signal alu_op : std_logic_vector (0 to 1);
   signal alu_in1 : std_logic_vector (0 to 7);
   signal alu_in2 : std_logic_vector (0 to 7);
   signal alu_out : std_logic_vector (0 to 7);
   signal reg_enabled : std_logic := '0';
-  type cpu_state is (fetch,store);
-  signal current_state : cpu_state := fetch;
-  signal next_state : cpu_state := fetch;
-  signal done_fetch : std_ulogic := '0';
-  signal done_store : std_ulogic := '0';
+  type cpu_state is (init,fetch,store);
+  signal state : cpu_state := init;
 begin
   clock_inst: entity work.clock 
     port map(
@@ -52,14 +55,33 @@ begin
       r_select => reg_select,
       enabled => reg_enabled
     );
+    memory_inst: entity work.memory
+      port map(
+        clk => clk,
+        rdwrt => mem_write,
+        addr => mem_addr,
+        data => mem_data
+      );
 
-    load_instructions: process (clk,current_state)
+    process (clk,state)
+      type c_file is file of character;
       constant zero: std_logic_vector (0 to 7) := "00000000";
+      file program_file: c_file;
+      variable read_instruction: character;
+      variable read_line: line;
       --OORDRSII
     begin
       if (rising_edge(clk)) then
-        if current_state = fetch then
-          done_fetch <= '0';
+        if state = init then
+          report "Initializing";
+          file_open(program_file, "input.bin", read_mode);
+          while not endfile(program_file) loop
+            read(program_file,read_instruction);
+
+          end loop;
+          file_close(program_file);
+          state <= fetch;
+        elsif state = fetch then
           report "Fetching";
           instruction <= "00000001";
           --decode the instruction
@@ -73,13 +95,13 @@ begin
           alu_op <= op;
           alu_in1 <= "01001010";
           alu_in2 <= "11111111";
-          current_state <= store;
-        elsif current_state = store then
+          state <= store;
+        elsif state = store then
           report "Storing";
           reg_data <= alu_out;
           reg_select <= rd;
           reg_write <= '1';
-          current_state <= fetch;
+          state <= fetch;
         end if;
       end if;
     end process;
