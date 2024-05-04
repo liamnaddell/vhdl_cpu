@@ -8,3 +8,6 @@ all:
 	$(GHDL) -a $(OPTS) main.vhdl
 	$(GHDL) -e $(OPTS) main
 	$(GHDL) -r $(OPTS) main
+
+lint:
+	ghdl -lint *.vhdl
