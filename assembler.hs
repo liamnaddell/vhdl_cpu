@@ -61,18 +61,18 @@ class Assembly a where
 instance Assembly Instruction where
   assemble i = foldr (liftA2 (+)) (Just 0) [opc, dst, src, imm]
     where opc = return $ opToBin (opcode i)
-          shiftR' x = (liftA2 (flip shiftR)) (Just x)
-          dst = shiftR' 2 (ckReg (regDst i))
-          src = shiftR' 4 (ckReg (regSrc i))
-          imm = shiftR' 6 (ckImm (immVal i))
+          shiftL' x = (liftA2 (flip shiftL)) (Just x)
+          dst = shiftL' 2 (ckReg (regDst i))
+          src = shiftL' 4 (ckReg (regSrc i))
+          imm = shiftL' 6 (ckImm (immVal i))
   --disassemble i = 
 
 build :: Program -> Maybe ([Word8])
 build (Program ins) 
-  | (length m_list) == (length good) = good
+  | (length m_list) == (length good) = Just good
   | otherwise = Nothing
   where m_list = map assemble ins
-        good = return $ catMaybes m_list
+        good = catMaybes m_list
 
 
 

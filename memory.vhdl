@@ -7,7 +7,8 @@ use ieee.numeric_std.all;
 entity memory is
   port (
          clk : in std_logic;
-         rdwrt : in std_logic;
+         read : in std_logic;
+         write : in std_logic;
          addr : in std_logic_vector(0 to 7);
          data : inout std_logic_vector(0 to 7)
   );
@@ -19,8 +20,8 @@ architecture behaviour of memory is
 begin
   process(clk)
   begin
-    if(rising_edge(clk)) then
-      if(rdwrt='1') then 
+    if(rising_edge(clk) and (read = '1')) then
+      if(write='1') then 
           ram_data(to_integer(unsigned(addr))) <= data(0 to 7);
       end if;
       data(0 to 7) <= ram_data(to_integer(unsigned(addr)));
