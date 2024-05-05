@@ -49,6 +49,7 @@ architecture behavioral of main is
     := "00000000";
   signal alu_out: std_logic_vector (0 to 7);
   signal alu_enable: std_logic := '0';
+
   type cpu_state is (start,init,fetch,store,halt);
   signal state : cpu_state := start;
   signal pc: unsigned(0 to 7);
@@ -147,12 +148,18 @@ begin
           reg_write <= '0';
           state <= fetch;
         elsif state = halt then
+          --TODO: Print a dump of registers+memory
           report "Halting";
           report "t0=" & to_hexstr(reg_data_out);
           finish;
         end if;
       elsif falling_edge(clk) then
+        -- Signals aren't driven instantly in VHDL
+        -- We reset back to defualts on the clock's falling edge.
         mem_write <= '0';
+        mem_read <= '0';
+        reg_enable <= '0';
+        alu_enable <= '0';
       end if;
     end process;
 end architecture behavioral;
