@@ -4,11 +4,10 @@ use ieee.numeric_std.all;
 
 entity register_file is
   port (
-    clk: in std_logic;
     r_select: in std_logic_vector(0 to 1);
     data_in: in std_logic_vector(0 to 7);
     write : in std_logic;
-    enabled : in std_logic;
+    enable : in std_logic;
     data_out : out std_logic_vector(0 to 7)
   );
 end;
@@ -18,9 +17,9 @@ architecture RTL of register_file is
   signal registers: reg := 
     ("00000000","00000000","00000000","00000000");
 begin
-  process(clk)
+  process(enable)
   begin
-    if rising_edge(clk) and (enabled = '1') then
+    if enable = '1' then
       if write = '1' then
         registers(to_integer(unsigned(r_select))) <= data_in;
       end if;

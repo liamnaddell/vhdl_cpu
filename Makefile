@@ -7,7 +7,7 @@ all:
 	$(GHDL) -a $(OPTS) memory.vhdl
 	$(GHDL) -a $(OPTS) main.vhdl
 	$(GHDL) -e $(OPTS) main
-	$(GHDL) -r $(OPTS) main
+	$(GHDL) -r  $(OPTS)  main --wave=wave.ghw
 
 lint:
 	ghdl -lint *.vhdl

@@ -4,7 +4,7 @@ use ieee.numeric_std.all;
 
 entity alu is
   port (
-   clk: in std_logic;
+   enable: in std_logic;
    op: in std_logic_vector(0 to 1);
    in1: in std_logic_vector(0 to 7);
    in2: in std_logic_vector(0 to 7);
@@ -15,9 +15,9 @@ end;
 
 architecture behavioral of alu is
 begin
-  process(clk)
+  process(enable)
   begin
-    if (rising_edge(clk)) then
+    if (enable = '1') then
       case op is
         when "00" => a_out <= in1 and in2;
         when others => a_out <= in1;

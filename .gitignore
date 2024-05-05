@@ -1,3 +1,4 @@
 *.cf
 out
 input.bin
+*.ghw
