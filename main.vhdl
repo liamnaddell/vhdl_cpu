@@ -30,17 +30,14 @@ architecture behavioral of main is
   signal reg_select : std_logic_vector(0 to 1) := "00";
   signal reg_write : std_logic := '0';
   signal reg_enable : std_logic := '0';
-
-  signal instruction: std_logic_vector (0 to 7);
-  signal rd: std_logic_vector (0 to 1);
-  signal rs: std_logic_vector (0 to 1);
-  signal imm: std_logic_vector (0 to 1);
-  signal op: std_logic_vector (0 to 1);
+  signal reg_done: std_logic := '0';
 
   signal mem_write: std_logic := '0';
+  signal mem_done: std_logic := '0';
   signal mem_read: std_logic := '0';
   signal mem_addr: std_logic_vector (0 to 7);
-  signal mem_data: std_logic_vector (0 to 7);
+  signal mem_data_in: std_logic_vector (0 to 7);
+  signal mem_data_out: std_logic_vector (0 to 7);
 
   signal alu_op : std_logic_vector (0 to 1);
   signal alu_in1: std_logic_vector (0 to 7) 
@@ -49,10 +46,13 @@ architecture behavioral of main is
     := "00000000";
   signal alu_out: std_logic_vector (0 to 7);
   signal alu_enable: std_logic := '0';
+  signal alu_done: std_logic;
 
-  type cpu_state is (start,init,fetch,store,halt);
+  type cpu_state is (start,init,fetch,execute,store,halt);
   signal state : cpu_state := start;
+  signal next_state : cpu_state := start;
   signal pc: unsigned(0 to 7);
+
 begin
   clock_inst: entity work.clock 
     port map(
@@ -64,7 +64,8 @@ begin
         op => alu_op,
         in1 => alu_in1,
         in2 => alu_in2,
-        a_out => alu_out
+        a_out => alu_out,
+        done => alu_done
     );
   register_inst: entity work.register_file
     port map(
@@ -72,14 +73,17 @@ begin
       data_out => reg_data_out,
       write => reg_write,
       r_select => reg_select,
-      enable => reg_enable
+      enable => reg_enable,
+      done => reg_done
     );
     memory_inst: entity work.memory
       port map(
         write => mem_write,
         read => mem_read,
         addr => mem_addr,
-        data => mem_data
+        data_in => mem_data_in,
+        data_out => mem_data_out,
+        done => mem_done
       );
 
     process (clk,state)
@@ -89,6 +93,8 @@ begin
       variable read_instruction: character;
       variable read_line: line;
       variable instn_count: integer range 0 to 255;
+      variable instruction: std_logic_vector (0 to 7);
+
       --OORDRSII
     begin
       if (rising_edge(clk)) then
@@ -96,57 +102,59 @@ begin
           report "CPU Start";
           pc <= "00000000";
           file_open(program_file, "input.bin", read_mode);
-          state <= init;
+          next_state <= init;
         elsif state = init then
           report "Initializng " & integer'image(to_integer(pc));
           if not endfile(program_file) then
             read(program_file,read_instruction);
             mem_addr <= std_logic_vector(pc);
-            mem_data <= std_logic_vector(to_unsigned(character'pos(read_instruction),8));
+            mem_data_in <= std_logic_vector(to_unsigned(character'pos(read_instruction),8));
             mem_write <= '1';
             pc <= pc + 1;
           else 
             file_close(program_file);
             instn_count := to_integer(pc);
             pc <= "00000000";
-            state <= fetch;
+            next_state <= fetch;
           end if;
         elsif state = fetch then
           report "Fetching " & to_istring(pc);
-          mem_addr <= std_logic_vector(pc);
-          instruction <= mem_data;
-          mem_read <= '1';
-          --decode the instruction
-          op <= instruction(0 to 1);
-          rd <= instruction(2 to 3);
-          rs <= instruction(4 to 5);
-          imm <= instruction(6 to 7);
-          --configure the register file to select the register from the instruction
-          reg_select <= rs;
-          reg_enable <= '1';
-          --configure the register file to write the alu output to a register
-          alu_op <= op;
-          alu_in1 <= "01001010";
-          alu_in2 <= "11111111";
-          pc <= pc+1;
-          reg_enable <= '0';
-          if pc < instn_count then
-            state <= store;
-          else
-            reg_select <= "00";
-            reg_write <= '0';
+          if mem_done = '0' then
+            mem_addr <= std_logic_vector(pc);
+            mem_read <= '1';
+          elsif mem_done <= '1' then
+            instruction := mem_data_out;
+            report "instr: " & to_bstring(instruction);
+            report "imm: " & to_bstring(instruction(6 to 7));
+            --configure the register file to select the register from the instruction
+            next_state <= execute;
+            if pc < instn_count then
+              pc <= pc+1;
+              next_state <= execute;
+            else
+              next_state <= halt;
+            end if;
+          end if;
+        elsif state = execute then
+          if reg_done = '0' then
+            reg_select <= instruction(4 to 5);
             reg_enable <= '1';
-            state <= halt;
+          elsif alu_done = '0' then
+            --configure the register file to write the alu output to a register
+            alu_op <= instruction(0 to 1);
+            alu_in1 <= reg_data_out;
+            alu_in2 <= "000000" & instruction(6 to 7);
+            alu_enable <= '1';
+          else
+            next_state <= store;
           end if;
         elsif state = store then
           --report "Storing";
           reg_data_in <= alu_out;
-          reg_select <= rd;
+          reg_select <= instruction(2 to 3);
           reg_enable <= '1';
           reg_write <= '1';
-          reg_enable <= '0';
-          reg_write <= '0';
-          state <= fetch;
+          next_state <= fetch;
         elsif state = halt then
           --TODO: Print a dump of registers+memory
           report "Halting";
@@ -156,10 +164,13 @@ begin
       elsif falling_edge(clk) then
         -- Signals aren't driven instantly in VHDL
         -- We reset back to defualts on the clock's falling edge.
-        mem_write <= '0';
-        mem_read <= '0';
-        reg_enable <= '0';
-        alu_enable <= '0';
+        if next_state /= state then
+          mem_write <= '0';
+          mem_read <= '0';
+          reg_enable <= '0';
+          alu_enable <= '0';
+          state <= next_state;
+        end if;
       end if;
     end process;
 end architecture behavioral;

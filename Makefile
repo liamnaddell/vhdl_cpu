@@ -9,5 +9,7 @@ all:
 	$(GHDL) -e $(OPTS) main
 	$(GHDL) -r  $(OPTS)  main --wave=wave.ghw
 
+wave: all
+	gtkwave wave.ghw
 lint:
 	ghdl -lint *.vhdl

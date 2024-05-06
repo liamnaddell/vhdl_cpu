@@ -8,7 +8,8 @@ entity register_file is
     data_in: in std_logic_vector(0 to 7);
     write : in std_logic;
     enable : in std_logic;
-    data_out : out std_logic_vector(0 to 7)
+    data_out : out std_logic_vector(0 to 7);
+    done : out std_logic
   );
 end;
 
@@ -24,6 +25,9 @@ begin
         registers(to_integer(unsigned(r_select))) <= data_in;
       end if;
       data_out <= registers(to_integer(unsigned(r_select)));
+      done <= '1';
+    else
+      done <= '0';
     end if;
   end process;
 end architecture rtl;

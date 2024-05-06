@@ -9,7 +9,9 @@ entity memory is
          read : in std_logic;
          write : in std_logic;
          addr : in std_logic_vector(0 to 7);
-         data : in std_logic_vector(0 to 7)
+         data_in : in std_logic_vector(0 to 7);
+         data_out : out std_logic_vector(0 to 7);
+         done : out std_logic
   );
 end memory;
 
@@ -19,11 +21,16 @@ architecture behaviour of memory is
 begin
   process(read,write)
   begin
-    if write='1' then 
-        ram_data(to_integer(unsigned(addr))) <= data;
+    if write = '1' or read = '1' then
+      if write='1' then 
+          ram_data(to_integer(unsigned(addr))) <= data_in;
+      end if;
+      if read = '1' then
+          data_out <= ram_data(to_integer(unsigned(addr)));
+      end if;
+      done <= '1';
+    else
+      done <= '0';
     end if;
-    --if read = '1' then
-    --  data <= ram_data(to_integer(unsigned(addr)));
-    --end if;
   end process;
 end behaviour;

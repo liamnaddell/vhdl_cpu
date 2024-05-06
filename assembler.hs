@@ -52,6 +52,7 @@ instr op rd rs im = Instruction { opcode=op
 newtype Program = Program [Instruction]
 
 
+--TODO: endianness is handled wrong. read "Dealing with binary data" from the haskell wiki.
 
 
 class Assembly a where

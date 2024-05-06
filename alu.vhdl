@@ -17,12 +17,14 @@ architecture behavioral of alu is
 begin
   process(enable)
   begin
-    if (enable = '1') then
+    if enable = '1' then
       case op is
         when "00" => a_out <= in1 and in2;
         when others => a_out <= in1;
       end case;
       done <= '1';
+    else
+      done <= '0';
     end if;
   end process;
 end architecture behavioral;
