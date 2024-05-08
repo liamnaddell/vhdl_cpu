@@ -93,7 +93,8 @@ begin
       variable read_instruction: character;
       variable read_line: line;
       variable instn_count: integer range 0 to 255;
-      variable instruction: std_logic_vector (0 to 7);
+      variable instruction: std_logic_vector (7 downto 0);
+      variable reg_to_print: unsigned(0 to 1) := "00";
 
       --OORDRSII
     begin
@@ -104,7 +105,7 @@ begin
           file_open(program_file, "input.bin", read_mode);
           next_state <= init;
         elsif state = init then
-          report "Initializng " & integer'image(to_integer(pc));
+          report "Initializing " & integer'image(to_integer(pc));
           if not endfile(program_file) then
             read(program_file,read_instruction);
             mem_addr <= std_logic_vector(pc);
@@ -125,7 +126,7 @@ begin
           elsif mem_done <= '1' then
             instruction := mem_data_out;
             report "instr: " & to_bstring(instruction);
-            report "imm: " & to_bstring(instruction(6 to 7));
+            report "imm: " & to_bstring(instruction(7 downto 6));
             --configure the register file to select the register from the instruction
             next_state <= execute;
             if pc < instn_count then
@@ -137,13 +138,13 @@ begin
           end if;
         elsif state = execute then
           if reg_done = '0' then
-            reg_select <= instruction(4 to 5);
+            reg_select <= instruction(5 downto 4);
             reg_enable <= '1';
           elsif alu_done = '0' then
             --configure the register file to write the alu output to a register
-            alu_op <= instruction(0 to 1);
+            alu_op <= instruction(1 downto 0);
             alu_in1 <= reg_data_out;
-            alu_in2 <= "000000" & instruction(6 to 7);
+            alu_in2 <= "000000" & instruction(7 downto 6);
             alu_enable <= '1';
           else
             next_state <= store;
@@ -151,20 +152,36 @@ begin
         elsif state = store then
           --report "Storing";
           reg_data_in <= alu_out;
-          reg_select <= instruction(2 to 3);
+          reg_select <= instruction(3 downto 2);
           reg_enable <= '1';
           reg_write <= '1';
           next_state <= fetch;
         elsif state = halt then
-          --TODO: Print a dump of registers+memory
           report "Halting";
-          report "t0=" & to_hexstr(reg_data_out);
-          finish;
+          if reg_done = '1' then
+            report "register t" & to_bstring(reg_to_print) 
+                                & "=" 
+                                & to_hexstr(reg_data_out);
+            --once done printing, quit out of ghdl
+            if reg_to_print = "11" then
+              finish;
+            else
+              reg_to_print := reg_to_print + 1;
+              reg_enable <= '0';
+            end if;
+          else
+            reg_select <= std_logic_vector(reg_to_print);
+            reg_enable <= '1';
+            reg_write <= '0';
+          end if;
         end if;
       elsif falling_edge(clk) then
         -- Signals aren't driven instantly in VHDL
         -- We reset back to defualts on the clock's falling edge.
-        if next_state /= state then
+        if state = init and next_state = init then
+          --for initialization, we write to memory over and over again.
+          mem_write <= '0';
+        elsif next_state /= state then
           mem_write <= '0';
           mem_read <= '0';
           reg_enable <= '0';

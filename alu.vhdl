@@ -19,7 +19,10 @@ begin
   begin
     if enable = '1' then
       case op is
-        when "00" => a_out <= in1 and in2;
+        when "00" => a_out <= std_logic_vector(unsigned(in1) + unsigned(in2));
+        when "01" => a_out <= std_logic_vector(unsigned(in1) * unsigned(in2));
+        when "10" => a_out <= in1 and in2;
+        when "11" => a_out <= in1 xor in2;
         when others => a_out <= in1;
       end case;
       done <= '1';
