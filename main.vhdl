@@ -129,7 +129,7 @@ begin
             report "imm: " & to_bstring(instruction(7 downto 6));
             --configure the register file to select the register from the instruction
             next_state <= execute;
-            if pc < instn_count then
+            if to_integer(pc) < instn_count - 1 then
               pc <= pc+1;
               next_state <= execute;
             else

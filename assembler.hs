@@ -91,11 +91,6 @@ parse program = Program $ map parseLine ls
 
 
 main = do
-  --let i1 = instr OpAdd 0 0 2
-  --let i2 = instr OpMul 1 0 2
-  --let i3 = instr OpAnd 2 1 1
-  --let i4 = instr OpXor 3 2 3
-
   args <- getArgs
   programText <- readFile (args !! 0)
   let program' = parse programText

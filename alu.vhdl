@@ -14,13 +14,21 @@ entity alu is
 end;
 
 architecture behavioral of alu is
+    function to_bstring(sl : std_logic) return string is
+      variable sl_str_v : string(1 to 3);  -- std_logic image with quotes around
+    begin
+      sl_str_v := std_logic'image(sl);
+      return "" & sl_str_v(2);  -- "" & character to get string
+    end function;
 begin
   process(enable)
   begin
     if enable = '1' then
+      report "in1: " & to_bstring(in1);
+      report "in2: " & to_bstring(in2);
       case op is
         when "00" => a_out <= std_logic_vector(unsigned(in1) + unsigned(in2));
-        when "01" => a_out <= std_logic_vector(unsigned(in1) * unsigned(in2));
+        when "01" => a_out <= std_logic_vector(unsigned(in1(0 to 3)) * unsigned(in2(0 to 3)));
         when "10" => a_out <= in1 and in2;
         when "11" => a_out <= in1 xor in2;
         when others => a_out <= in1;
