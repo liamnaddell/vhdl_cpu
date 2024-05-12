@@ -1,4 +1,4 @@
-# CpuVHDL2
+# CpuVHDL
 
 This project is a test project, designed to help me learn VHDL. The CPU implemented here is very similar to a CPU implmented in Logisim Evolution for CSCB58.
 
@@ -17,4 +17,8 @@ I tried to use as many synthesisable constructs as possible for this CPU, that w
 
 ## How to load programs.
 
-TODO: Document/finish `assembler.hs`
+* Use `./assembler.hs` to create programs. Then, this will output a file `input.bin`. This contains the assembled code
+* The `$(GHDL)` Makefile variable points to the installation of the `ghdl` binary.
+* Running `make` will run the cpu, which will use VHDL file I/O to load `input.bin` from disk.
+* Running `make wave` will also create a signal trace, then attempt to display that trace using `gtkwave`
+

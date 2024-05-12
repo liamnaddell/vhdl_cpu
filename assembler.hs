@@ -10,6 +10,7 @@ import qualified Data.ByteString.Builder as BLB
 --cabal install --lib split
 import Data.List.Split (splitOn)
 import System.Environment
+import System.Exit
 
 w2c :: Word8 -> Char
 w2c = toEnum . fromEnum
@@ -89,13 +90,18 @@ parse :: String -> Program
 parse program = Program $ map parseLine ls
   where ls = lines program
 
-
 main = do
   args <- getArgs
+  if (length args) < 1 then
+    die "You need pass a file to assemble"
+  else
+   return () 
   programText <- readFile (args !! 0)
-  let program' = parse programText
-  let program = fromJust $ build $ program'
-  BLB.writeFile "input.bin" (BLB.lazyByteString program)
+  let program' = build $ parse programText
+  case program' of
+    Just program -> BLB.writeFile "input.bin" $ BLB.lazyByteString program
+    Nothing -> die "Assembly Failed"
   return ()
+
 
 
